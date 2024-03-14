@@ -60,7 +60,7 @@ namespace Systems
         [WithAll(typeof(FlipCellState))]
         private partial struct FilipStateJob : IJobEntity
         {
-            public void Execute(in Entity entity, [EntityIndexInQuery] int sortKey, ref IsAlive isAlive,
+            public void Execute(ref IsAlive isAlive,
                 ref LocalToWorld localToWorld)
             {
                 float3 aliveOffset = new float3(0, 1f, 0);
