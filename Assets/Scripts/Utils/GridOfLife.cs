@@ -42,7 +42,7 @@ namespace Utils
 
         public static int2 GetCoordsFromIndex(int index, int gridWidth, int gridHeight)
         {
-            if (index >= math.mul(gridHeight, gridWidth))
+            if (index >= gridHeight * gridWidth)
             {
                 throw new IndexOutOfRangeException("Cannot convert centerIndex to coordinates!");
             }
