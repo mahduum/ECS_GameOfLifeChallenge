@@ -17,13 +17,14 @@ namespace Systems
         {
             state.RequireForUpdate<FlipCellState>();
             state.RequireForUpdate<IsAlive>();
+            state.RequireForUpdate<Neighbours>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             float3 aliveOffset = new float3(0, 1f, 0);
-            foreach (var (isAlive, localToWorld, cell, entity) in SystemAPI.Query<RefRW<IsAlive>, RefRW<LocalToWorld>, RefRO<Cell>>().WithAll<FlipCellState, Cell>().WithEntityAccess())
+            foreach (var (isAlive, localToWorld, cell, entity) in SystemAPI.Query<RefRW<IsAlive>, RefRW<LocalToWorld>, RefRO<Cell>>().WithAll<FlipCellState, Cell, Neighbours>().WithEntityAccess())
             {
                 float3 newPosition = localToWorld.ValueRO.Position +
                                      (isAlive.ValueRO.Value ? -aliveOffset : aliveOffset);//if was dead at the start leave it

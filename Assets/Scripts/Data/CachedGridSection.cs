@@ -38,4 +38,9 @@ namespace Data
     {
         
     }
+    
+    public struct Neighbours : IComponentData, IEnableableComponent
+    {
+        public FixedList4096Bytes<Entity> Entities;
+    }
 }

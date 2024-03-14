@@ -17,6 +17,8 @@ namespace Data
                 AddComponent(entity, new IsAlive());
                 AddComponent(entity, new FlipCellState());
                 SetComponentEnabled<FlipCellState>(entity, false);
+                AddComponent<Neighbours>(entity);
+                SetComponentEnabled<Neighbours>(entity, false);
                 //AddComponent(entity, new LocalTransform());
                 //AddSharedComponent(entity, new CachedGridSection64());
             }
