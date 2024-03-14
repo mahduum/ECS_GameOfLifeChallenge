@@ -1,5 +1,6 @@
-﻿using Unity.Entities;
-using Unity.Rendering;
+﻿using System;
+using System.Collections.Generic;
+using Unity.Entities;
 using Unity.Transforms;
 using UnityEngine;
 
@@ -17,9 +18,31 @@ namespace Data
                 AddComponent(entity, new IsAlive());
                 AddComponent(entity, new FlipCellState());
                 SetComponentEnabled<FlipCellState>(entity, false);
-                //AddComponent(entity, new LocalTransform());
-                //AddSharedComponent(entity, new CachedGridSection64());
             }
         }
+    }
+    
+    [Serializable]
+    [WriteGroup(typeof(LocalToWorld))]
+    public struct Cell : IComponentData
+    {
+        public int GridIndex;
+    }
+    
+    public struct CellIndexComparer : IComparer<Cell>
+    {
+        public int Compare(Cell x, Cell y)
+        {
+            return x.GridIndex.CompareTo(y.GridIndex);
+        }
+    }
+
+    public struct IsAlive : IComponentData
+    {
+        public bool Value;
+    }
+    
+    public struct FlipCellState : IComponentData, IEnableableComponent
+    {
     }
 }

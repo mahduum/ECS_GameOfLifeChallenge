@@ -64,11 +64,6 @@ namespace Systems
         }
 
         [BurstCompile]
-        public void OnDestroy(ref SystemState state)
-        {
-        }
-
-        [BurstCompile]
         public partial struct MapGridIndexToEntityStateJob : IJobEntity
         {
             [NativeDisableParallelForRestriction, NativeDisableContainerSafetyRestriction]
@@ -79,9 +74,7 @@ namespace Systems
                 GridIndexToEntityState[cell.GridIndex] = isAlive.Value;
             }
         }
-
-        //todo separate query for dead -> there is only on condition to bring them back
-        //for living -> only one condition to keep them unchanged
+        
         [BurstCompile]
         public partial struct DetectCellStateChangeJob : IJobEntity
         {

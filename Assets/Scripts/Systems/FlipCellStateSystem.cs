@@ -49,12 +49,6 @@ namespace Systems
             
             state.Dependency = flipStateJob.ScheduleParallel(query, state.Dependency);
         }
-
-        [BurstCompile]
-        public void OnDestroy(ref SystemState state)
-        {
-
-        }
         
         [BurstCompile]
         [WithAll(typeof(FlipCellState))]
@@ -68,7 +62,7 @@ namespace Systems
                 float3 newPosition = localToWorld.Position +
                                      (isAlive.Value ? -aliveOffset : aliveOffset);//if was dead at the start leave it
                 
-                isAlive.Value = !isAlive.Value;//change appearence
+                isAlive.Value = !isAlive.Value;
                 
                 localToWorld = new LocalToWorld()
                 {
