@@ -46,9 +46,9 @@ namespace Systems
 
             NativeArray<bool> gridIndexToEntity = CollectionHelper.CreateNativeArray<bool>(entityCount, state.WorldUpdateAllocator);
             
-            var gridIndexToEntityJob = new MapGridIndexToEntityJob()
+            var gridIndexToEntityJob = new MapGridIndexToEntityStateJob()
             {
-                GridIndexToEntity = gridIndexToEntity
+                GridIndexToEntityState = gridIndexToEntity
             };
 
             var mappingJobHandle = gridIndexToEntityJob.ScheduleParallel(query, state.Dependency);
@@ -56,7 +56,7 @@ namespace Systems
             var detectCellStateChangeJob = new DetectCellStateChangeJob()
             {
                 FlipCellStateLookup = _flipCellStateLookup,
-                GridIndexToEntity = gridIndexToEntity,
+                GridIndexToEntityState = gridIndexToEntity,
                 GridConfig = gridConfig
             };
 
@@ -69,14 +69,14 @@ namespace Systems
         }
 
         [BurstCompile]
-        public partial struct MapGridIndexToEntityJob : IJobEntity
+        public partial struct MapGridIndexToEntityStateJob : IJobEntity
         {
             [NativeDisableParallelForRestriction, NativeDisableContainerSafetyRestriction]
-            public NativeArray<bool> GridIndexToEntity;//todo as possible optimization set hash map once and keep it for whole duration?
+            public NativeArray<bool> GridIndexToEntityState;
             
             public void Execute(in Entity entity, in Cell cell, in IsAlive isAlive)
             {
-                GridIndexToEntity[cell.GridIndex] = isAlive.Value;
+                GridIndexToEntityState[cell.GridIndex] = isAlive.Value;
             }
         }
 
@@ -89,7 +89,7 @@ namespace Systems
             public ComponentLookup<FlipCellState> FlipCellStateLookup;
             
             [ReadOnly]
-            public NativeArray<bool> GridIndexToEntity;
+            public NativeArray<bool> GridIndexToEntityState;
             public GridConfig GridConfig;
             
             public void Execute(in Entity entity, in Cell cell, in IsAlive isAlive)
@@ -104,7 +104,7 @@ namespace Systems
                        Debug.LogError($"Index should not be less than 0, inputs: cell grid index: {cell.GridIndex}, neighbour number: {i}, width: {GridConfig.GridWidth}, height: {GridConfig.GridHeight}");
                    }
                    
-                   if (GridIndexToEntity[neighbourGridIndex])
+                   if (GridIndexToEntityState[neighbourGridIndex])
                    {
                        livingNeighboursCount++;
                    }
