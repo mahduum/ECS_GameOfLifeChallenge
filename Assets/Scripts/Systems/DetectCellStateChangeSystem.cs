@@ -33,27 +33,22 @@ namespace Systems
             var elapsed = SystemAPI.Time.ElapsedTime;
             if ((elapsed - _lastUpdateTime) < 0.5)
             {
-                return;
+                //return;
             }
 
             _lastUpdateTime = elapsed;
             
             _flipCellStateLookup.Update(ref state);
-            var gridConfigEntity = SystemAPI.GetSingletonEntity<GridConfig>();//this config should be system?
+            var gridConfigEntity = SystemAPI.GetSingletonEntity<GridConfig>();
             var gridConfig = SystemAPI.GetComponent<GridConfig>(gridConfigEntity);
             var query = SystemAPI.QueryBuilder().WithAll<Cell, IsAlive>().Build();
             var entityCount = query.CalculateEntityCount();
-            // var componentDataArray = query.ToComponentDataArray<Cell>(Allocator.Temp);
-            // var sortByGridIndex = componentDataArray.SortJob(new CellIndexComparer());
-            // var sortHandle = sortByGridIndex.Schedule(state.Dependency);
-            // sortHandle.Complete();
-            // populate grid and 
-            NativeParallelHashMap<int, bool> gridIndexToEntity = new NativeParallelHashMap<int, bool>(entityCount, state.WorldUpdateAllocator);
-            NativeParallelHashMap<int, bool>.ParallelWriter gridParallelWriter = gridIndexToEntity.AsParallelWriter();
+
+            NativeArray<bool> gridIndexToEntity = CollectionHelper.CreateNativeArray<bool>(entityCount, state.WorldUpdateAllocator);
             
-            var gridIndexToEntityJob = new MapGridIndexToEntityJob()
+            var gridIndexToEntityJob = new MapGridIndexToEntityStateJob()
             {
-                GridIndexToEntity = gridParallelWriter
+                GridIndexToEntityState = gridIndexToEntity
             };
 
             var mappingJobHandle = gridIndexToEntityJob.ScheduleParallel(query, state.Dependency);
@@ -61,7 +56,7 @@ namespace Systems
             var detectCellStateChangeJob = new DetectCellStateChangeJob()
             {
                 FlipCellStateLookup = _flipCellStateLookup,
-                GridIndexToEntity = gridIndexToEntity,
+                GridIndexToEntityState = gridIndexToEntity,
                 GridConfig = gridConfig
             };
 
@@ -69,27 +64,17 @@ namespace Systems
         }
 
         [BurstCompile]
-        public void OnDestroy(ref SystemState state)
+        public partial struct MapGridIndexToEntityStateJob : IJobEntity
         {
-
-        }
-
-        [BurstCompile]
-        public partial struct MapGridIndexToEntityJob : IJobEntity
-        {
-            public NativeParallelHashMap<int, bool>.ParallelWriter GridIndexToEntity;//todo as possible optimization set hash map once and keep it for whole duration?
+            [NativeDisableParallelForRestriction, NativeDisableContainerSafetyRestriction]
+            public NativeArray<bool> GridIndexToEntityState;
             
             public void Execute(in Entity entity, in Cell cell, in IsAlive isAlive)
             {
-                if (GridIndexToEntity.TryAdd(cell.GridIndex, isAlive.Value) == false)
-                {
-                    Debug.LogError($"Couldn't add key: {cell.GridIndex} with value: {isAlive.Value}");
-                }
+                GridIndexToEntityState[cell.GridIndex] = isAlive.Value;
             }
         }
-
-        //todo separate query for dead -> there is only on condition to bring them back
-        //for living -> only one condition to keep them unchanged
+        
         [BurstCompile]
         public partial struct DetectCellStateChangeJob : IJobEntity
         {
@@ -97,7 +82,7 @@ namespace Systems
             public ComponentLookup<FlipCellState> FlipCellStateLookup;
             
             [ReadOnly]
-            public NativeParallelHashMap<int, bool> GridIndexToEntity;
+            public NativeArray<bool> GridIndexToEntityState;
             public GridConfig GridConfig;
             
             public void Execute(in Entity entity, in Cell cell, in IsAlive isAlive)
@@ -112,20 +97,15 @@ namespace Systems
                        Debug.LogError($"Index should not be less than 0, inputs: cell grid index: {cell.GridIndex}, neighbour number: {i}, width: {GridConfig.GridWidth}, height: {GridConfig.GridHeight}");
                    }
                    
-                   if (GridIndexToEntity.TryGetValue(neighbourGridIndex, out var val))
+                   if (GridIndexToEntityState[neighbourGridIndex])
                    {
-                       if(val)
-                           livingNeighboursCount++;
-                   }
-                   else
-                   {
-                       Debug.LogError($"Item index {neighbourGridIndex} not found, hash map length: {GridIndexToEntity.Count()} ");
+                       livingNeighboursCount++;
                    }
                 }
                 
                 //default unchanged
                 bool flip = false;
-                if (isAlive.Value)//todo bools are cached so state can be changed here directly?
+                if (isAlive.Value)
                 {
                     if (livingNeighboursCount is <= 1 or >= 4)
                     {
@@ -139,22 +119,6 @@ namespace Systems
                     flip = true;
                 }
                 
-                //alternative
-                //default flip
-                // bool flip = true;
-                // if (isAlive.Value)//todo bools are cached so state can be changed here directly?
-                // {
-                //     if (livingNeighboursCount is > 1 and < 4)
-                //     {
-                //         flip = false;
-                //     }
-                // }
-                // else if (livingNeighboursCount != 3)
-                // {
-                //     flip = false;
-                // }
-
-                //todo consider processing only disabled (no lookup) but then another system must disable it
                 FlipCellStateLookup.SetComponentEnabled(entity, flip);
             }
         }

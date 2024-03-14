@@ -148,13 +148,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 405040172}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: 0.28727552, y: 0.002863733, z: -0.00087406853, w: 0.95784336}
+  m_LocalPosition: {x: 1174.4, y: 517.8573, z: 355.13916}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 33.39, y: 0.342, z: -0.002}
 --- !u!114 &405040174
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -167,8 +167,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3aa881d15abc4c0bb07d1de87c03bb08, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _width: 1000
-  _height: 1000
+  _aliveOnSpawnProbability: 10
+  _width: 750
+  _height: 750
   _cellPrefab: {fileID: 6008164825099384433, guid: 78e5e8e1511fee14cbfef1fe643c5804,
     type: 3}
 --- !u!1660057539 &9223372036854775807
