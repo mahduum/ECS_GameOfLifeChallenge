@@ -39,13 +39,12 @@ namespace Systems
             _lastUpdateTime = elapsed;
             
             _flipCellStateLookup.Update(ref state);
-            var gridConfigEntity = SystemAPI.GetSingletonEntity<GridConfig>();//this config should be system?
+            var gridConfigEntity = SystemAPI.GetSingletonEntity<GridConfig>();
             var gridConfig = SystemAPI.GetComponent<GridConfig>(gridConfigEntity);
             var query = SystemAPI.QueryBuilder().WithAll<Cell, IsAlive>().Build();
             var entityCount = query.CalculateEntityCount();
 
             NativeArray<bool> gridIndexToEntity = CollectionHelper.CreateNativeArray<bool>(entityCount, state.WorldUpdateAllocator);
-            //NativeParallelHashMap<int, bool>.ParallelWriter gridParallelWriter = gridIndexToEntity.AsParallelWriter();
             
             var gridIndexToEntityJob = new MapGridIndexToEntityJob()
             {
@@ -67,7 +66,6 @@ namespace Systems
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
-
         }
 
         [BurstCompile]
@@ -114,7 +112,7 @@ namespace Systems
                 
                 //default unchanged
                 bool flip = false;
-                if (isAlive.Value)//todo bools are cached so state can be changed here directly?
+                if (isAlive.Value)
                 {
                     if (livingNeighboursCount is <= 1 or >= 4)
                     {
@@ -128,22 +126,6 @@ namespace Systems
                     flip = true;
                 }
                 
-                //alternative
-                //default flip
-                // bool flip = true;
-                // if (isAlive.Value)//todo bools are cached so state can be changed here directly?
-                // {
-                //     if (livingNeighboursCount is > 1 and < 4)
-                //     {
-                //         flip = false;
-                //     }
-                // }
-                // else if (livingNeighboursCount != 3)
-                // {
-                //     flip = false;
-                // }
-
-                //todo consider processing only disabled (no lookup) but then another system must disable it
                 FlipCellStateLookup.SetComponentEnabled(entity, flip);
             }
         }

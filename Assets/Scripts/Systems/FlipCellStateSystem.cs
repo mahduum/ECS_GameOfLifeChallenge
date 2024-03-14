@@ -60,8 +60,6 @@ namespace Systems
         [WithAll(typeof(FlipCellState))]
         private partial struct FilipStateJob : IJobEntity
         {
-            //public EntityCommandBuffer.ParallelWriter Ecb;
-
             public void Execute(in Entity entity, [EntityIndexInQuery] int sortKey, ref IsAlive isAlive,
                 ref LocalToWorld localToWorld)
             {
@@ -76,12 +74,6 @@ namespace Systems
                 {
                     Value = float4x4.TRS(newPosition, quaternion.identity, new float3(1f, 1f, 1f))
                 };
-                
-                // Ecb.SetComponentEnabled<FlipCellState>(sortKey, entity, false);
-                // Ecb.SetComponent(sortKey, entity, new IsAlive()
-                // {
-                //     Value = !isAlive.Value
-                // });
             }
         }
     }
