@@ -33,7 +33,7 @@ namespace Systems
             var elapsed = SystemAPI.Time.ElapsedTime;
             if ((elapsed - _lastUpdateTime) < 0.5)
             {
-                return;
+                //return;
             }
 
             _lastUpdateTime = elapsed;
@@ -43,17 +43,13 @@ namespace Systems
             var gridConfig = SystemAPI.GetComponent<GridConfig>(gridConfigEntity);
             var query = SystemAPI.QueryBuilder().WithAll<Cell, IsAlive>().Build();
             var entityCount = query.CalculateEntityCount();
-            // var componentDataArray = query.ToComponentDataArray<Cell>(Allocator.Temp);
-            // var sortByGridIndex = componentDataArray.SortJob(new CellIndexComparer());
-            // var sortHandle = sortByGridIndex.Schedule(state.Dependency);
-            // sortHandle.Complete();
-            // populate grid and 
-            NativeParallelHashMap<int, bool> gridIndexToEntity = new NativeParallelHashMap<int, bool>(entityCount, state.WorldUpdateAllocator);
-            NativeParallelHashMap<int, bool>.ParallelWriter gridParallelWriter = gridIndexToEntity.AsParallelWriter();
+
+            NativeArray<bool> gridIndexToEntity = CollectionHelper.CreateNativeArray<bool>(entityCount, state.WorldUpdateAllocator);
+            //NativeParallelHashMap<int, bool>.ParallelWriter gridParallelWriter = gridIndexToEntity.AsParallelWriter();
             
             var gridIndexToEntityJob = new MapGridIndexToEntityJob()
             {
-                GridIndexToEntity = gridParallelWriter
+                GridIndexToEntity = gridIndexToEntity
             };
 
             var mappingJobHandle = gridIndexToEntityJob.ScheduleParallel(query, state.Dependency);
@@ -77,14 +73,12 @@ namespace Systems
         [BurstCompile]
         public partial struct MapGridIndexToEntityJob : IJobEntity
         {
-            public NativeParallelHashMap<int, bool>.ParallelWriter GridIndexToEntity;//todo as possible optimization set hash map once and keep it for whole duration?
+            [NativeDisableParallelForRestriction, NativeDisableContainerSafetyRestriction]
+            public NativeArray<bool> GridIndexToEntity;//todo as possible optimization set hash map once and keep it for whole duration?
             
             public void Execute(in Entity entity, in Cell cell, in IsAlive isAlive)
             {
-                if (GridIndexToEntity.TryAdd(cell.GridIndex, isAlive.Value) == false)
-                {
-                    Debug.LogError($"Couldn't add key: {cell.GridIndex} with value: {isAlive.Value}");
-                }
+                GridIndexToEntity[cell.GridIndex] = isAlive.Value;
             }
         }
 
@@ -97,7 +91,7 @@ namespace Systems
             public ComponentLookup<FlipCellState> FlipCellStateLookup;
             
             [ReadOnly]
-            public NativeParallelHashMap<int, bool> GridIndexToEntity;
+            public NativeArray<bool> GridIndexToEntity;
             public GridConfig GridConfig;
             
             public void Execute(in Entity entity, in Cell cell, in IsAlive isAlive)
@@ -112,14 +106,9 @@ namespace Systems
                        Debug.LogError($"Index should not be less than 0, inputs: cell grid index: {cell.GridIndex}, neighbour number: {i}, width: {GridConfig.GridWidth}, height: {GridConfig.GridHeight}");
                    }
                    
-                   if (GridIndexToEntity.TryGetValue(neighbourGridIndex, out var val))
+                   if (GridIndexToEntity[neighbourGridIndex])
                    {
-                       if(val)
-                           livingNeighboursCount++;
-                   }
-                   else
-                   {
-                       Debug.LogError($"Item index {neighbourGridIndex} not found, hash map length: {GridIndexToEntity.Count()} ");
+                       livingNeighboursCount++;
                    }
                 }
                 
